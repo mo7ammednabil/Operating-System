@@ -1,0 +1,29 @@
+pwd -> Know where I am
+ls -> Display existing files
+mkdir OS_Lab -> Create a folder
+cd OS_Lab -> Move to the folder/current directory
+touch file1.txt -> Create files
+echo "Mohammed is here" > file1.txt -> Write data inside a file
+grep "Mohammed" file1.txt -> Search for "Mohammed"
+grep -v "Aly" file1.txt -> Search for lines that do not contain "Aly"
+grep "is" *.txt -> Search in all .txt files
+mkdir backup -> Create a backup folder
+cp *.txt backup -> Copy files to the folder
+ls -l -> View files in detail
+ls -lh -> View file sizes
+ls -a -> View files and hidden files
+
+mv file2.txt .file2.txt
+    ls -a -> Hide file
+
+mv file1.txt newfile.txt
+    mv newfile.txt backup/ -> Transfer and rename
+
+date -> Show date and time
+
+cd .. | cd backup | cd - | cd ~ -> Move between directories
+
+rm newfile.txt -> Delete file
+
+Ctrl + C -> Stop a running command
+
