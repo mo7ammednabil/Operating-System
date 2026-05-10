@@ -12,7 +12,7 @@ while sum (remaining) > 0:
         if remaining [i] > 0:
             if remaining[i]>tq:
                 time+= tq
-                remaining[i] = tq
+                remaining[i] -= tq
             else:
                 time += remaining[i]
                 remaining[i]=0
