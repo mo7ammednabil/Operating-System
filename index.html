@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>البحث عن النتيجة</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        label {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.2);
+            color: #fff;
+            outline: none;
+            box-sizing: border-box;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        input:focus {
+            border-color: #00c6ff;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(90deg, #00c6ff, #0072ff);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: linear-gradient(90deg, #0072ff, #00c6ff);
+            transform: translateY(-2px);
+        }
+
+        #result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .result-item strong {
+            color: #00c6ff;
+        }
+
+        #statusMessage {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .error-msg {
+            color: #ff4c4c !important;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
+        ::-webkit-scrollbar-thumb { background: #00c6ff; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>استعلام النتائج</h2>
+        
+        <div id="statusMessage">جاري تحميل وقراءة ملف Excel...</div>
+
+        <div id="searchSection" style="display: none;">
+            <label>أدخل رقم الجلوس:</label>
+            <input type="number" id="seatNumber" placeholder="مثلاً: 97">
+            <button onclick="searchResult()">عرض النتيجة</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let excelData = [];
+        let headers = [];
+
+        // تحميل ملف الـ XLSX تلقائياً عند فتح الصفحة
+        window.onload = function() {
+            fetch('data.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('لم يتم العثور على ملف data.xlsx');
+                    }
+                    return response.arrayBuffer(); // قراءة الملف كـ صيغة ثنائية Binary
+                })
+                .then(buffer => {
+                    const data = new Uint8Array(buffer);
+                    // قراءة الملف باستخدام مكتبة SheetJS
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // اختيار الورقة الأولى في ملف الإكسيل
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // تحويل بيانات الجدول إلى مصفوفة (Array of Arrays)
+                    const fullData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    if (fullData.length > 0) {
+                        headers = fullData[0]; // السطر الأول يحتوي على العناوين
+                        excelData = fullData.slice(1); // باقي الأسطر تحتوي على بيانات الطلاب
+                        
+                        // إخفاء رسالة التحميل وإظهار صندوق البحث
+                        document.getElementById('statusMessage').style.display = 'none';
+                        document.getElementById('searchSection').style.display = 'block';
+                    } else {
+                        throw new Error('الملف فارغ');
+                    }
+                })
+                .catch(error => {
+                    const statusDiv = document.getElementById('statusMessage');
+                    statusDiv.innerText = 'خطأ: تأكد من وجود ملف باسم data.xlsx بجانب ملف الـ HTML وتأكد من تشغيل خادم محلي (Live Server).';
+                    statusDiv.classList.add('error-msg');
+                    console.error(error);
+                });
+        };
+
+        function searchResult() {
+            const seatNo = document.getElementById('seatNumber').value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            if (!seatNo) {
+                alert('من فضلك أدخل رقم الجلوس أولاً.');
+                return;
+            }
+
+            // البحث عن الطالب في العمود الأول (رقم الجلوس)
+            const student = excelData.find(row => row[0] !== undefined && String(row[0]).trim() === seatNo);
+
+            if (student) {
+                let html = '<h3 style="text-align:center; margin-bottom:15px; border-bottom: 2px solid #00c6ff; padding-bottom:10px;">بيانات النجاح</h3>';
+                for (let i = 0; i < headers.length; i++) {
+                    let value = student[i] !== undefined ? String(student[i]).trim() : '-';
+                    let headerName = headers[i] !== undefined ? String(headers[i]).trim() : '';
+                    
+                    if (headerName !== '') {
+                        html += `
+                        <div class="result-item">
+                            <strong>${headerName}:</strong> 
+                            <span>${value}</span>
+                        </div>`;
+                    }
+                }
+                resultDiv.innerHTML = html;
+                resultDiv.style.display = 'block';
+                resultDiv.scrollTop = 0;
+            } else {
+                resultDiv.innerHTML = '<p style="text-align:center; color:#ff4c4c; font-weight:bold;">عذراً، رقم الجلوس غير موجود.</p>';
+                resultDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
+
